@@ -167,7 +167,6 @@ class OsmOsisManager:
 
   def init_database(self, conf):
     # import osmosis
-    osmosis_lock = self.lock_database()
     self.set_pgsql_schema(reset=True)
 
     # drop schema if present - might be remaining from a previous failing import
@@ -226,9 +225,6 @@ class OsmOsisManager:
     gisconn.commit()
     giscurs.close()
     self.osmosis_close()
-
-    # free lock
-    del osmosis_lock
 
 
   def update_metainfo(self, conf):
