@@ -1194,6 +1194,9 @@ class Test(TestAnalyserOsmosis):
         for fn in sorted(os.listdir("analysers/")):
             if not fn.startswith("analyser_merge_") or not fn.endswith(".py"):
                 continue
+            if fn == "analyser_merge_pitch_FR.py":
+                # Skip big analysers
+                continue
             analyser = importlib.import_module("analysers." + fn[:-3], package=".")
             print(analyser)
             num_run_analyser_class = 0
