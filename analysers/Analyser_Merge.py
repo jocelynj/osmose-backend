@@ -601,6 +601,7 @@ class Load(object):
         self.y = y
         self.srid = srid
         self.table_name = table_name
+        self.table = None
         self.create = create
         self.select = select
         self.uniq = uniq
@@ -639,6 +640,7 @@ class Load(object):
             table = table_base_name
         else:
             table = table_base_name[-(63-10):]+hexastablehash(table_base_name)[-10:]
+        self.table = table
 
         osmosis.run("CREATE UNLOGGED TABLE IF NOT EXISTS meta (name character varying(255) NOT NULL, update integer, bbox character varying(1024) )")
 
@@ -1046,8 +1048,26 @@ class Analyser_Merge(Analyser_Osmosis):
             } )
 
     def drop_table(self):
+        import shutil
+        total, used, free = shutil.disk_usage("/")
+        print("before clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
+
         if self.table:
             self.run(sql99.replace("%(official)s", self.table))
+
+        if self.load.table:
+            self.run(sql99.replace("%(official)s", self.load.table))
+
+        for filename in os.listdir(self.config.dir_cache):
+            filepath = os.path.join(self.config.dir_cache, filename)
+            print("rm %s" % filepath)
+            try:
+                shutil.rmtree(filepath)
+            except OSError:
+                os.remove(filepath)
+
+        total, used, free = shutil.disk_usage("/")
+        print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
 
 
     def passTags(self, official):
@@ -1162,6 +1182,7 @@ class Test(TestAnalyserOsmosis):
 
         cls.analyser_conf.country = "FR"
         cls.analyser_conf.dst_dir = cls.conf.dir_results
+        cls.analyser_conf.dir_cache = cls.conf.dir_cache
 
         import modules.OsmOsisManager
         cls.conf.osmosis_manager = modules.OsmOsisManager.OsmOsisManager(cls.conf, cls.conf.db_host, cls.conf.db_user, cls.conf.db_password, cls.conf.db_base, cls.conf.db_schema or cls.conf.country, cls.conf.db_persistent, cls.logger)
@@ -1174,6 +1195,8 @@ class Test(TestAnalyserOsmosis):
             if not fn.startswith("analyser_merge_") or not fn.endswith(".py"):
                 continue
             analyser = importlib.import_module("analysers." + fn[:-3], package=".")
+            print(analyser)
+            num_run_analyser_class = 0
             for name, obj in inspect.getmembers(analyser):
                 if (inspect.isclass(obj) and obj.__module__ == ("analysers." + fn[:-3]) and
                     (name.startswith("Analyser") or name.startswith("analyser"))):
@@ -1189,3 +1212,6 @@ class Test(TestAnalyserOsmosis):
 
                     self.root_err = self.load_errors()
                     self.check_num_err(min=0, max=5)
+
+                    num_run_analyser_class += 1
+                    print(fn, num_run_analyser_class, name)
