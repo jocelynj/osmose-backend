@@ -49,6 +49,10 @@ class Analyser_Merge_Dynamic(Analyser):
         with self.analysers[0](self.config, self.error_file,  self.logger) as analyser_obj:
             return analyser_obj.timestamp()
 
+    def drop_table(self):
+        with self.analysers[0](self.config, self.error_file,  self.logger) as analyser_obj:
+            return analyser_obj.drop_table()
+
 
 class SubAnalyser_Merge_Dynamic(Analyser_Merge):
 

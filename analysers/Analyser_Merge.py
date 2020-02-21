@@ -305,6 +305,10 @@ WHERE
     official.tags1 - (SELECT coalesce(array_agg(key), array[]::text[]) FROM each(official.tags1) WHERE NOT osm_item.tags?key AND value = '""" + GENERATE_DELETE_TAG + """') - osm_item.tags - 'source'::text != ''::hstore
 """
 
+sql99 = """
+DROP TABLE IF EXISTS %(official)s CASCADE;
+"""
+
 class Source:
     def __init__(self, attribution = None, millesime = None, encoding = "utf-8", file = None, fileUrl = None, fileUrlCache = 30, zip = None, gzip = False, filter = None):
         """
@@ -755,6 +759,7 @@ class Load(object):
         if not(self.srid and not self.bbox): # Abort condition
             return tableOfficial
 
+
 class Select:
     def __init__(self, types = [], tags = {}):
         """
@@ -846,6 +851,7 @@ class Analyser_Merge(Analyser_Osmosis):
         self.parser = parser
         self.load = load
         self.mapping = mapping
+        self.table = None
 
         if hasattr(self, 'missing_official'):
             self.classs[self.missing_official['id']] = self.missing_official
@@ -900,6 +906,7 @@ class Analyser_Merge(Analyser_Osmosis):
         if not table:
             self.logger.log(u"Empty bbox, abort")
             return
+        self.table = table
 
         # Extract OSM objects
         if self.load.srid:
@@ -1038,6 +1045,9 @@ class Analyser_Merge(Analyser_Osmosis):
                 "fix": self.mergeTags(res[4], res[3], self.mapping.osmRef, self.mapping.generate.tag_keep_multiple_values),
             } )
 
+    def drop_table(self):
+        if self.table:
+            self.run(sql99.replace("%(official)s", self.table))
 
 
     def passTags(self, official):
@@ -1174,6 +1184,7 @@ class Test(TestAnalyserOsmosis):
 
                     with obj(self.analyser_conf, self.logger) as analyser_obj:
                         analyser_obj.analyser()
+                        analyser_obj.drop_table()
 
                     self.root_err = self.load_errors()
                     self.check_num_err(min=0, max=5)
