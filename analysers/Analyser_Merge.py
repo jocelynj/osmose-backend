@@ -1183,6 +1183,7 @@ class Test(TestAnalyserOsmosis):
                     self.xml_res_file = self.analyser_conf.dst
 
                     with obj(self.analyser_conf, self.logger) as analyser_obj:
+                        analyser_obj.limit = 2
                         analyser_obj.analyser()
                         analyser_obj.drop_table()
 

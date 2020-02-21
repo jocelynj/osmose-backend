@@ -36,14 +36,19 @@ class Analyser_Merge_Dynamic(Analyser):
     def __init__(self, config, logger = None):
         Analyser.__init__(self, config, logger)
         self.analysers = []
+        self.limit = None
 
     def analyser(self):
+        count = 0
         for obj in self.analysers:
             with obj(self.config, self.error_file,  self.logger) as analyser_obj:
 #                if not options.change or not xml_change:
                     analyser_obj.analyser()
 #                else:
 #                    analyser_obj.analyser_change()
+            count += 1
+            if self.limit and count >= self.limit:
+                return
 
     def timestamp(self):
         with self.analysers[0](self.config, self.error_file,  self.logger) as analyser_obj:
