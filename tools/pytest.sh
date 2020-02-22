@@ -19,4 +19,4 @@ case $TEST_SUITE in
   *)     PYTEST_PARAM="";;
 esac
 
-python3 $(which pytest) $PYTEST_PARAM
+python3 $(which pytest) -s $PYTEST_PARAM
