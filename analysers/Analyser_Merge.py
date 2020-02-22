@@ -1056,6 +1056,10 @@ class Analyser_Merge(Analyser_Osmosis):
         total, used, free = shutil.disk_usage("/var/ramfs")
         print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
 
+        self.giscurs.execute("SELECT table_name FROM information_schema.tables")
+        for table in self.giscurs.fetchall():
+            print(table)
+
         if self.table:
             self.run(sql99.replace("%(official)s", self.table))
 
