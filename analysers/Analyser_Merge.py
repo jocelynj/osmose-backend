@@ -307,6 +307,8 @@ WHERE
 
 sql99 = """
 DROP TABLE IF EXISTS %(official)s CASCADE;
+COMMIT;
+BEGIN;
 """
 
 class Source:
@@ -1071,7 +1073,7 @@ class Analyser_Merge(Analyser_Osmosis):
         total, used, free = shutil.disk_usage("/")
         print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
         total, used, free = shutil.disk_usage("/var/ramfs")
-        print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
+        print("after clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
 
 
     def passTags(self, official):
