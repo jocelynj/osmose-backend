@@ -1163,6 +1163,15 @@ class Test(TestAnalyserOsmosis):
         cls.analyser_conf.dst_dir = cls.conf.dir_results
         cls.analyser_conf.dir_cache = cls.conf.dir_cache
 
+        for dirname in [cls.conf.dir_results, cls.conf.dir_cache]:
+            try:
+                os.makedirs(dirname)
+            except OSError:
+                if os.path.isdir(dirname):
+                    pass
+                else:
+                    raise
+
         import modules.OsmOsisManager
         cls.conf.osmosis_manager = modules.OsmOsisManager.OsmOsisManager(cls.conf, cls.conf.db_host, cls.conf.db_user, cls.conf.db_password, cls.conf.db_base, cls.conf.db_schema or cls.conf.country, cls.conf.db_persistent, cls.logger)
 
