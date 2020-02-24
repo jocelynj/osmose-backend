@@ -306,7 +306,7 @@ WHERE
 """
 
 sql99 = """
-DROP TABLE IF EXISTS %(official)s CASCADE;
+DROP TABLE IF EXISTS %(table)s CASCADE;
 COMMIT;
 BEGIN;
 """
@@ -1049,37 +1049,6 @@ class Analyser_Merge(Analyser_Osmosis):
                 "fix": self.mergeTags(res[4], res[3], self.mapping.osmRef, self.mapping.generate.tag_keep_multiple_values),
             } )
 
-    def drop_table(self):
-        import shutil
-        total, used, free = shutil.disk_usage("/")
-        print("before clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
-        total, used, free = shutil.disk_usage("/var/ramfs")
-        print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
-
-        self.giscurs.execute("SELECT table_name FROM information_schema.tables")
-        for table in self.giscurs.fetchall():
-            print(table)
-
-        if self.table:
-            self.run(sql99.replace("%(official)s", self.table))
-
-        if self.load.table:
-            self.run(sql99.replace("%(official)s", self.load.table))
-
-        for filename in os.listdir(self.config.dir_cache):
-            filepath = os.path.join(self.config.dir_cache, filename)
-            print("rm %s" % filepath)
-            try:
-                shutil.rmtree(filepath)
-            except OSError:
-                os.remove(filepath)
-
-        total, used, free = shutil.disk_usage("/")
-        print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
-        total, used, free = shutil.disk_usage("/var/ramfs")
-        print("after clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
-
-
     def passTags(self, official):
         official = dict(filter(lambda kv: kv[1] != Generate.delete_tag, official.items()))
         return {"+": official}
@@ -1200,6 +1169,7 @@ class Test(TestAnalyserOsmosis):
     def test_merge(self):
         # run all available merge analysers, for basic SQL check
         import importlib, inspect, os, sys
+        import shutil
 
         for fn in sorted(os.listdir("analysers/")):
             if not fn.startswith("analyser_merge_") or not fn.endswith(".py"):
@@ -1220,8 +1190,36 @@ class Test(TestAnalyserOsmosis):
 
                     with obj(self.analyser_conf, self.logger) as analyser_obj:
                         analyser_obj.limit = 2
+                        prev_tables = set()
+                        analyser_obj.giscurs.execute("SELECT table_name FROM information_schema.tables")
+                        for table in analyser_obj.giscurs.fetchall():
+                            prev_tables.add(table[0])
+
                         analyser_obj.analyser()
-                        analyser_obj.drop_table()
+
+                        total, used, free = shutil.disk_usage("/")
+                        print("before clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
+                        if os.path.isdir("/var/ramfs"):
+                            total, used, free = shutil.disk_usage("/var/ramfs")
+                            print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
+
+                        after_tables = set()
+                        analyser_obj.giscurs.execute("SELECT table_name FROM information_schema.tables")
+                        for table in analyser_obj.giscurs.fetchall():
+                            after_tables.add(table[0])
+
+                        new_tables = after_tables - prev_tables
+
+                        for table in new_tables: 
+                            print("rm table %s" % table)
+                            analyser_obj.run(sql99.replace("%(table)s", table))
+
+                        total, used, free = shutil.disk_usage("/")
+                        print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
+                        if os.path.isdir("/var/ramfs"):
+                            total, used, free = shutil.disk_usage("/var/ramfs")
+                            print("after clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
+
 
                     self.root_err = self.load_errors()
                     self.check_num_err(min=0, max=5)
