@@ -306,7 +306,7 @@ WHERE
 """
 
 sql99 = """
-DROP TABLE IF EXISTS %(table)s CASCADE;
+DROP TABLE %(table)s CASCADE;
 COMMIT;
 BEGIN;
 """
@@ -1188,37 +1188,50 @@ class Test(TestAnalyserOsmosis):
                                               "normal/%s.xml" % name)
                     self.xml_res_file = self.analyser_conf.dst
 
+                    gisconn = self.conf.osmosis_manager.osmosis().conn()
+                    giscurs = gisconn.cursor()
+
+                    prev_tables = set()
+                    giscurs.execute("SELECT table_name FROM information_schema.tables where table_schema = 'osmose'")
+                    for table in giscurs.fetchall():
+                        prev_tables.add(table[0])
+                    giscurs.close()
+
                     with obj(self.analyser_conf, self.logger) as analyser_obj:
                         analyser_obj.limit = 2
-                        prev_tables = set()
-                        analyser_obj.giscurs.execute("SELECT table_name FROM information_schema.tables")
-                        for table in analyser_obj.giscurs.fetchall():
-                            prev_tables.add(table[0])
-
                         analyser_obj.analyser()
 
-                        total, used, free = shutil.disk_usage("/")
-                        print("before clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
-                        if os.path.isdir("/var/ramfs"):
-                            total, used, free = shutil.disk_usage("/var/ramfs")
-                            print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
+                    total, used, free = shutil.disk_usage("/")
+                    print("before clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
+                    if os.path.isdir("/var/ramfs"):
+                        total, used, free = shutil.disk_usage("/var/ramfs")
+                        print("before clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
 
-                        after_tables = set()
-                        analyser_obj.giscurs.execute("SELECT table_name FROM information_schema.tables")
-                        for table in analyser_obj.giscurs.fetchall():
-                            after_tables.add(table[0])
+                    giscurs = gisconn.cursor()
+                    after_tables = set()
+                    giscurs.execute("SELECT table_name FROM information_schema.tables where table_schema = 'osmose'")
+                    for table in giscurs.fetchall():
+                        print(1, table)
+                        after_tables.add(table[0])
 
-                        new_tables = after_tables - prev_tables
+                    new_tables = after_tables - prev_tables
 
-                        for table in new_tables: 
-                            print("rm table %s" % table)
-                            analyser_obj.run(sql99.replace("%(table)s", table))
+                    for table in new_tables: 
+                        print("rm table %s" % table)
+                        giscurs.execute(sql99.replace("%(table)s", "osmose." + table))
 
-                        total, used, free = shutil.disk_usage("/")
-                        print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
-                        if os.path.isdir("/var/ramfs"):
-                            total, used, free = shutil.disk_usage("/var/ramfs")
-                            print("after clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
+                    giscurs.execute("SELECT table_name FROM information_schema.tables where table_schema = 'osmose'")
+                    for table in giscurs.fetchall():
+                        print(2, table)
+                        after_tables.add(table[0])
+
+                    giscurs.close()
+
+                    total, used, free = shutil.disk_usage("/")
+                    print("after clean - total=%.1f GiB, used=%.1f GiB, free=%.1f GiB" % (total / (2**30), used / (2**30), free / (2**30)))
+                    if os.path.isdir("/var/ramfs"):
+                        total, used, free = shutil.disk_usage("/var/ramfs")
+                        print("after clean (ramfs) - total=%.1f MiB, used=%.1f MiB, free=%.1f MiB" % (total / (2**20), used / (2**20), free / (2**20)))
 
 
                     self.root_err = self.load_errors()
