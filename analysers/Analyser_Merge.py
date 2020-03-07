@@ -1159,7 +1159,7 @@ class Test(TestAnalyserOsmosis):
                                           "driving_side": "left",
                                           "proj": 2969})
 
-        cls.analyser_conf.country = "FR"
+        cls.analyser_conf.country = "FR-01"
         cls.analyser_conf.dst_dir = cls.conf.dir_results
         cls.analyser_conf.dir_cache = cls.conf.dir_cache
 
