@@ -31,6 +31,9 @@ addons:
 install:
   - pip install -r requirements.txt
 before_script:
+  - pip3 show PyKOpeningHours
+  - python3 -c "import PyKOpeningHours; print(PyKOpeningHours)"
+  - python3 -c "from PyKOpeningHours.PyKOpeningHours import OpeningHours; print(OpeningHours)"
   # configure database
   - psql -c 'CREATE USER osmose;' -U postgres
   - psql -c "ALTER USER osmose WITH PASSWORD '-osmose-';" -U postgres

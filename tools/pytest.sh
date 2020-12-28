@@ -12,6 +12,8 @@ else
   TEST_SUITE="$1"
 fi
 
+pip3 show PyKOpeningHours
+
 case $TEST_SUITE in
   lint)  pylama; exit $?;;
   mypy)  mypy .; exit $?;;
