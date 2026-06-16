@@ -170,7 +170,7 @@ class OsmOsisManager:
       self.psql_f(script)
 
     # data
-    if options.import_tool == "osmosis-parallel":
+    if options.import_tool.endswith("-parallel"):
       # Run osmosis and psql import in parallel, thanks to named fifos to send
       # generated tables directly to COPY functions.
       parallel = True
