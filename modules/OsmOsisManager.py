@@ -178,17 +178,24 @@ class OsmOsisManager:
       parallel = False
 
     self.logger.log(self.logger.log_av_r+"import osmosis data"+self.logger.log_ap)
-    cmd  = [conf.bin_osmosis]
     dst_ext = os.path.splitext(conf.download["dst"])[1]
     dir_country_tmp = os.path.join(self.conf.dir_tmp, self.db_schema)
     shutil.rmtree(dir_country_tmp, ignore_errors=True)
     os.makedirs(dir_country_tmp)
-    if dst_ext == ".pbf":
-      cmd += ["--read-pbf", "file=%s" % conf.download["dst"]]
+    if options.import_tool.startswith("osmosis"):
+      cmd  = [conf.bin_osmosis]
+      if dst_ext == ".pbf":
+        cmd += ["--read-pbf", "file=%s" % conf.download["dst"]]
+      else:
+        cmd += ["--read-xml", "file=%s" % conf.download["dst"]]
+      cmd += ["-quiet"]
+      cmd += ["--write-pgsql-dump", "directory=%s" % dir_country_tmp, "enableLinestringBuilder=yes", "enableKeepPartialLinestring=yes"]
+    elif options.import_tool.startswith("rust"):
+      cmd  = [conf.bin_rust_osmpbf_to_pgsql]
+      cmd += ["--pbf", conf.download["dst"]]
+      cmd += ["--dump", dir_country_tmp]
     else:
-      cmd += ["--read-xml", "file=%s" % conf.download["dst"]]
-    cmd += ["-quiet"]
-    cmd += ["--write-pgsql-dump", "directory=%s" % dir_country_tmp, "enableLinestringBuilder=yes", "enableKeepPartialLinestring=yes"]
+      raise Exception("Option '%s' not supported" % options.import_tool)
 
     if parallel:
       for f in ['nodes.txt',
@@ -200,7 +207,7 @@ class OsmOsisManager:
     try:
       bg_proc = []
 
-      bg_proc.append((self.logger.execute_err(cmd, background=parallel), "osmosis"))
+      bg_proc.append((self.logger.execute_err(cmd, background=parallel), options.import_tool.split("-")[0]))
       if parallel:
         # Reading stdout/stderr must not block
         os.set_blocking(bg_proc[-1][0].stdout.fileno(), False)

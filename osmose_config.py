@@ -48,6 +48,7 @@ class template_config:
     dir_scripts    = modules.config.dir_osmose
     bin_osmosis    = modules.config.bin_osmosis
     bin_pyosmium_up_to_date = modules.config.bin_pyosmium_up_to_date
+    bin_rust_osmpbf_to_pgsql = modules.config.bin_rust_osmpbf_to_pgsql
     osmosis_pre_scripts = [
         dir_scripts + "/osmosis/pgsnapshot_schema_0.6.sql",
 #       dir_scripts + "/osmosis/osmosis-0.48.3-36-gada1b6f5-SNAPSHOT/script/pgsnapshot_schema_0.6_bbox.sql",

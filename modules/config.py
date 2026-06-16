@@ -44,6 +44,9 @@ bin_pyosmium_up_to_date = "pyosmium-up-to-date"
 # where osmconvert is located
 bin_osmconvert = "./osmconvert/osmconvert"
 
+# where rust osmpbf-to-pgsql is located
+bin_rust_osmpbf_to_pgsql = dir_osmose + "/tools/osmpbf-to-pgsql/osmpbf-to-pgsql"
+
 ### no need to modify following variables ###
 
 dir_tmp = os.path.join(dir_work, "tmp")
